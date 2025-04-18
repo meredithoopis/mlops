@@ -10,4 +10,5 @@ traindata/data/
 traindata/car_labels.csv 
 traindata/train-annotations-bbox.csv 
 traindata/car_images.txt 
+traindata/class-descriptions-boxable.csv
 

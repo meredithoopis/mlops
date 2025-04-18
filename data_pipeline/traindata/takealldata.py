@@ -35,7 +35,8 @@ def find_images_with_multiple_cars(output_file="car_images.txt",subset_size=5000
     # Download the class descriptions if needed
     if not os.path.exists(class_labels_file):
         print(f"Downloading {class_labels_file}...")
-        os.system(f"wget https://storage.googleapis.com/openimages/v6/oidv6-train-annotations-bbox.csv")
+        os.system(f"wget https://storage.googleapis.com/openimages/v5/class-descriptions-boxable.csv")
+        
         
     # Download the training annotations if needed
     if not os.path.exists(train_annotations_file):
@@ -167,12 +168,12 @@ def extract_car_labels_for_images(image_list_file, output_file="car_labels.csv")
     print(f"Found {len(image_ids_set)} unique image IDs")
 
     # Check if annotation files exist
-    class_desc_file = "class-descriptions-boxable.csv"  ##loi 
+    class_desc_file = "class-descriptions-boxable.csv"  
     bbox_file = "train-annotations-bbox.csv" #Tao sua o day 
 
     if not os.path.exists(class_desc_file):
         print(f"Please download the class descriptions file first:")
-        print("wget https://storage.googleapis.com/openimages/v6/oidv6-class-descriptions-boxable.csv")
+        print("wget https://storage.googleapis.com/openimages/v5/class-descriptions-boxable.csv")
         return
     
     if not os.path.exists(bbox_file):
