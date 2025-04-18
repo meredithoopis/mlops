@@ -5,3 +5,9 @@ crawl_test/failed_links.txt
 crawl_test/video_urls.txt
 crawl_test/res.json
 crawl_test/.env
+traindata/data/
+.DS_Store 
+traindata/car_labels.csv 
+traindata/train-annotations-bbox.csv 
+traindata/car_images.txt 
+
