@@ -1,1 +1,1 @@
-A fully-fledged car detection system. 
+A fully-fledged car detection system 
