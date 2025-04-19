@@ -9,7 +9,7 @@ import pandas as pd
 import re
 import sys
 
-
+#Rec: Take 5000 from the beginning 
 
 # Constants
 BUCKET_NAME = 'open-images-dataset'
@@ -242,8 +242,8 @@ def extract_car_labels_for_images(image_list_file, output_file="car_labels.csv")
 ###################################
 #Set num_processes according to the number of cores in your machine: Download takes 23 mins
 if __name__ == "__main__":
-    #find_images_with_multiple_cars(output_file="car_images.txt",subset_size=5000, seed=1610)
-    #download_all_images("car_images.txt", download_folder="data", num_processes=14)
+    find_images_with_multiple_cars(output_file="car_images.txt",subset_size=5000, seed=1610)
+    download_all_images("car_images.txt", download_folder="data", num_processes=14)
     extract_car_labels_for_images("car_images.txt")
     
     
