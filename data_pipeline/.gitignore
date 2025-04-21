@@ -1,3 +1,9 @@
+__pycache__/
+*.py[cod]
+.env
+*.env
+.DS_Store
+
 crawl_test/downloaded_images/gg_images/
 crawl_test/downloaded_images/from_youtube/
 crawl_test/videos
@@ -11,5 +17,9 @@ traindata/car_labels.csv
 traindata/train-annotations-bbox.csv 
 traindata/car_images.txt 
 traindata/class-descriptions-boxable.csv
-
+flow/dataset/
+flow/config/ 
+flow/dags/
+flow/logs/
+flow/plugins/ 
 
