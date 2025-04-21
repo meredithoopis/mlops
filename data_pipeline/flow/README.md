@@ -1,4 +1,6 @@
-Run as follows: 
+Run as follows:  
 
-chmod +x run.sh\ 
+```bash
+chmod +x run.sh  
 ./run.sh
+```
