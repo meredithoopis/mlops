@@ -13,8 +13,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # --- Configuration ---
-IMAGES_DIR = "/opt/airflow/dataset/images"   
-LABELS_CSV = "/opt/airflow/dataset/labels.csv" 
+IMAGES_DIR = "/opt/airflow/images"   # Folder containing .jpg files
+LABELS_CSV = "/opt/airflow/labels.csv"  # Single CSV with all labels
 
 #db_host = 'localhost'
 DB_HOST     = "postgres"
@@ -94,6 +94,7 @@ def save_image_to_db(**kwargs):
 def load_labels_for_image(image_name, **kwargs):
     """Pull all label rows for a given image ID from preloaded DataFrame."""
     image_id = os.path.splitext(image_name)[0]
+    image_id = image_id.replace('_jpg','')
     labels_df = pd.read_csv(LABELS_CSV)
     records = labels_df[labels_df['ImageID'] == image_id]
     #records = LABELS_DF[LABELS_DF['ImageID'] == image_id]
@@ -106,6 +107,7 @@ def save_labels_to_db(image_name, **kwargs):
     """Iterate over all label records and insert into Postgres labels table."""
     ti = kwargs['ti']
     image_id = os.path.splitext(image_name)[0]
+    image_id = image_id.replace('_jpg','')
     recs = ti.xcom_pull(task_ids=f'load_labels_{image_name}', key='return_value') or []
 
     if not recs:
