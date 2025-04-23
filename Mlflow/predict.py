@@ -7,7 +7,7 @@ model = YOLO("runs/detect/train/weights/best.pt")
 # Đường dẫn thư mục test
 test_folder = "/home/laplace/project-yolo/images/test"
 
-# Tạo folder output (ở đây là test_result trong outputoutput)
+# Tạo folder output
 save_dir = "runs/detect/test_result"
 os.makedirs(save_dir, exist_ok=True)
 
