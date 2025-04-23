@@ -35,7 +35,7 @@ x-airflow-common:
     - ./config:/opt/airflow/config
     - ./plugins:/opt/airflow/plugins
     - ./images:/opt/airflow/images 
-    - .labels.csv:/opt/airflow/labels.csv
+    - ./labels.csv:/opt/airflow/labels.csv
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
