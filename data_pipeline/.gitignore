@@ -23,5 +23,5 @@ flow/config/
 flow/dags/
 flow/logs/
 flow/plugins/ 
-flow/exportnames.py 
+# flow/exportnames.py 
 flow/image.txt
