@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import os
 
 # Load model đã huấn luyện
-model = YOLO("runs/detect/train/weights/best.pt")
+model = YOLO("/mlartifacts/0/16fa8bd85843416f930b613acbdd3b58/artifacts/weights/best.pt")
 
 # Đường dẫn thư mục test
 test_folder = "/home/laplace/project-yolo/images/test"
