@@ -1,0 +1,7 @@
+- tạo env
+- đưa folder data vs file car_labels.csv vào env (như t thì rename data thành images)
+- chạy convert_csv_to_yolo.py, có folder labels chứa labels ở dạng txt
+- chạy data_split.py để train/val/test thành 80/10/10
+- chạy trymlflow.py. check kqua ở http://localhost:5000
+- predict.py nhận input là một ảnh và trả về output là ảnh có các bounding box bao quanh xe
+- modelexport.py xuất model sang dạng onnx
