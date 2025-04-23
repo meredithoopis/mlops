@@ -17,7 +17,8 @@ traindata/car_labels.csv
 traindata/train-annotations-bbox.csv 
 traindata/car_images.txt 
 traindata/class-descriptions-boxable.csv
-flow/dataset/
+flow/images/
+flow/labels.csv
 flow/config/ 
 flow/dags/
 flow/logs/
