@@ -1,0 +1,13 @@
+train: /home/laplace/project-yolo/images/train  # Đường dẫn đến thư mục ảnh train
+val: /home/laplace/project-yolo/images/val      # Đường dẫn đến thư mục ảnh val
+test: /home/laplace/project-yolo/images/test    # Đường dẫn đến thư mục ảnh test
+
+nc: 6  # Số lượng class (Car, Taxi, Truck, Bus, Cart, Golf cart)
+
+names:
+  0: 'Car'
+  1: 'Taxi'
+  2: 'Truck'
+  3: 'Bus'
+  4: 'Cart'
+  5: 'Golf cart'
