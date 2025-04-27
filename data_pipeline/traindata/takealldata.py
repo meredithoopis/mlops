@@ -273,7 +273,7 @@ from collections import defaultdict
 # Constants
 BUCKET_NAME = 'open-images-dataset'
 REGEX = r'(test|train|validation|challenge2018)/([a-fA-F0-9]*)'
-TARGET_CLASSES = ['car', 'Vehicle registration plate', 'truck', 'bus', 'taxi']
+TARGET_CLASSES = ['car', 'truck', 'bus', 'taxi']
 
 ###################################
 # Step 1: Find images with target vehicle classes and write their IDs to a file
