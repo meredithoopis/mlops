@@ -127,7 +127,7 @@ with open(f"{dataset_dir}/data.yaml", "w") as f:
 print("Đã tạo data.yaml với 4 lớp và augmentation")
 
 
-
+# Train
 from ultralytics import YOLO
 model = YOLO("yolo11n.pt")
 results = model.train(
