@@ -4,7 +4,6 @@ import random
 import shutil
 import glob
 
-# Đường dẫn
 data_dir = "data"
 labels_csv = "vehicle_labels.csv"
 labels_dir = "/Users/admin/Car-detection-serving-model/open_images_project/labels"
@@ -15,7 +14,6 @@ os.makedirs(f"{dataset_dir}/images/val", exist_ok=True)
 os.makedirs(f"{dataset_dir}/labels/train", exist_ok=True)
 os.makedirs(f"{dataset_dir}/labels/val", exist_ok=True)
 
-# Ánh xạ lớp
 class_mapping = {
     'Car': 0,
     'Taxi': 1,
@@ -23,13 +21,12 @@ class_mapping = {
     'Bus': 3
 }
 
-# Đọc nhãn
 labels = pd.read_csv(labels_csv)
 
-# Xóa duplicate labels
+
 labels = labels.drop_duplicates(subset=['ImageID', 'LabelName_Text', 'XMin', 'YMin', 'XMax', 'YMax'])
 
-# Chuyển đổi sang định dạng YOLO
+
 for image_id in labels['ImageID'].unique():
     image_labels = labels[labels['ImageID'] == image_id]
     output_file = os.path.join(labels_dir, f"{image_id}.txt")
@@ -48,7 +45,7 @@ for image_id in labels['ImageID'].unique():
                 height = y_max - y_min
                 f.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
 
-# Lấy danh sách ảnh có nhãn
+
 images_with_labels = []
 for img in os.listdir(data_dir):
     if not img.endswith(".jpg"):
@@ -59,23 +56,23 @@ for img in os.listdir(data_dir):
 
 random.seed(1610)
 
-# Chia train/val (90% train, 10% val)
+
 train_imgs = random.sample(images_with_labels, int(0.9 * len(images_with_labels)))
 val_imgs = [img for img in images_with_labels if img not in train_imgs]
 
-# Sao chép ảnh và nhãn vào thư mục train
+
 for img in train_imgs:
     shutil.copy(os.path.join(data_dir, img), f"{dataset_dir}/images/train/{img}")
     lbl = img.replace(".jpg", ".txt")
     shutil.copy(os.path.join(labels_dir, lbl), f"{dataset_dir}/labels/train/{lbl}")
 
-# Sao chép ảnh và nhãn vào thư mục val
+
 for img in val_imgs:
     shutil.copy(os.path.join(data_dir, img), f"{dataset_dir}/images/val/{img}")
     lbl = img.replace(".jpg", ".txt")
     shutil.copy(os.path.join(labels_dir, lbl), f"{dataset_dir}/labels/val/{lbl}")
 
-# Kiểm tra phân bố lớp
+
 class_counts = {i: 0 for i in range(len(class_mapping))}
 invalid_files = []
 for label_file in glob.glob(f"{dataset_dir}/labels/*/*.txt"):
@@ -112,7 +109,7 @@ data_yaml_content = f"""train: {dataset_dir}/images/train
 val: {dataset_dir}/images/val
 nc: 4
 names: ['Car', 'Taxi', 'Truck', 'Bus']
-# Data augmentation
+
 hsv_h: 0.015  # Hue
 hsv_s: 0.7    # Saturation
 hsv_v: 0.4    # Value
@@ -131,13 +128,8 @@ print("Đã tạo data.yaml với 4 lớp và augmentation")
 
 
 
-## !pip install ultralytics
 from ultralytics import YOLO
-
-# Tải mô hình pretrained
 model = YOLO("yolo11n.pt")
-
-# Huấn luyện 60 epochs
 results = model.train(
     data="/Users/admin/Car-detection-serving-model/open_images_project/dataset/data.yaml",
     epochs=60,
