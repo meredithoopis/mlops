@@ -7,9 +7,6 @@ __pycache__/
 crawl_test/downloaded_images/gg_images/
 crawl_test/downloaded_images/from_youtube/
 crawl_test/videos
-crawl_test/failed_links.txt
-crawl_test/video_urls.txt
-crawl_test/res.json
 crawl_test/.env
 traindata/data/
 .DS_Store 

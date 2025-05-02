@@ -1,81 +1,97 @@
 import os
 import requests
-import json
 import time
 from serpapi import GoogleSearch
 from tqdm import tqdm
 import argparse
 from dotenv import load_dotenv
 
+# Load API key from .env file
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
+
 SAVE_DIR = os.path.join('downloaded_images', 'gg_images')
+os.makedirs(SAVE_DIR, exist_ok=True)
 
-if not os.path.exists(SAVE_DIR):
-    os.makedirs(SAVE_DIR)
 
-def get_query_from_cli():
-    parser = argparse.ArgumentParser(description="Search and download images from Google Images via SerpAPI")
+def get_query_and_limit_from_cli():
+    """
+    Parse search query and optional image download limit from command line.
+    Returns:
+        tuple: (query string, limit integer)
+    """
+    parser = argparse.ArgumentParser(description="Search and download images from Google Images via SerpAPI.")
     parser.add_argument('query', type=str, help='Search query for images')
+    parser.add_argument('--limit', type=int, default=50, help='Maximum number of images to download (default: 50)')
     args = parser.parse_args()
-    return args.query
+    return args.query, args.limit
 
-def search_images(query): 
+
+def search_images(query):
+    """
+    Search images using SerpAPI Google Images engine.
+    Parameters:
+        query (str): The search term.
+    Returns:
+        list: List of image URLs from the search results.
+    """
     params = {
         "api_key": API_KEY,
         "engine": "google_images",
         "google_domain": "google.com",
         "q": query,
         "hl": "en",
-        "gl": "us", 
-        "num": 50 
+        "gl": "us",
+        "num": 50  
     }
+
     search = GoogleSearch(params)
     results = search.get_dict()
-    with open('res.json', 'w') as f:
-        json.dump(results, f, indent=4)
-    
-    print("Results saved to res.json")
-    return results
+    return [item['original'] for item in results.get("images_results", [])]
+
 
 def download_image(url, save_path):
+    """
+    Downloads an image from a URL and saves it to the given path.
+    Returns:
+        bool: True if successful, False otherwise.
+    """
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         with open(save_path, 'wb') as file:
             file.write(response.content)
-        print(f"✅ Image saved to {save_path}")
+        return True
     except requests.RequestException as e:
         print(f"❌ Failed to download {url}: {e}")
-        return url  
+        return False
 
 
 def main():
-    query = get_query_from_cli()  
-    results = search_images(query)  
+    """
+    Main pipeline: parse args, search images, and download them.
+    """
+    query, limit = get_query_and_limit_from_cli()
+    image_links = search_images(query)
 
-    images_link = []
-    for result in results.get("images_results", []):
-        images_link.append(result['original'])
-    
-    failed_links = []  
-    for i, url in enumerate(tqdm(images_link, desc="Downloading images")):
-        filename = f"image_{i+1}.png" 
+    if not image_links:
+        print("❌ No image links found.")
+        return
+
+    print(f"📸 Found {len(image_links)} image links. Downloading up to {limit}...")
+
+    downloaded = 0
+    for i, url in enumerate(tqdm(image_links, desc="Downloading images")):
+        if downloaded >= limit:
+            break
+        filename = f"image_{downloaded + 1}.png"
         save_path = os.path.join(SAVE_DIR, filename)
-        failed_url = download_image(url, save_path)
-        if failed_url:
-            failed_links.append(failed_url)
-        time.sleep(0.2)
-    if failed_links:
-        with open("failed_links.txt", "w") as f:
-            for link in failed_links:
-                f.write(link + "\n")
-        print(f"\n⚠️ Some images failed to download. See failed_links.txt for details.")
-    else:
-        print("\n🎉 All images downloaded successfully.")
+        if download_image(url, save_path):
+            downloaded += 1
+        time.sleep(0.2)  
+
+    print(f"\n✅ Downloaded {downloaded} image(s).")
+
 
 if __name__ == "__main__":
     main()
-
-#how to: python download_images.py "street webcam car"
-#Problem: How to limit the number of images downloaded? Currently, we have 100 images downloaded.

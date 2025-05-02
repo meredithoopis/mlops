@@ -1,6 +1,31 @@
-Add an .env file containing API Key of Serpapi
-Beware: Have ffmpeg in your device
+# 🖼️ Image & Video Crawler with Frame Extraction
 
-Just run file process.sh 
+A simple, script-based pipeline to crawl images using **SerpAPI**, download videos from **YouTube**, and extract key frames using **ffmpeg**.
 
-Problem: Change the crawl script to take only 5000 pics originally
+---
+
+## 📦 Features
+
+- 🔍 **Image Crawling** from Google Images via SerpAPI
+- 🎥 **Video Downloading** via `yt-dlp` (YouTube)
+- 🖼️ **Key Frame Extraction** from videos using OpenCV
+- 🛠️ Shell automation via `process.sh`
+
+---
+
+## ⚙️ How-to
+### 1. Configure API key
+Create an .env file in the folder: 
+```ini 
+API_KEY=your_serpapi_key_here
+```
+Paste your API Key from [SerpApi](https://serpapi.com/users/sign_in)
+
+### 2. Running the script 
+```bash 
+chmod +x process.sh
+./process.sh "street webcam car" "traffic camera video"
+```
+
+
+

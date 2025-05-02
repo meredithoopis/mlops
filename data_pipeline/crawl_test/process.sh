@@ -4,8 +4,6 @@
 IMG_KEYWORDS="$1"
 VID_KEYWORDS="$2"
 MAX_FILESIZE_MB=500
-RESULT_FILE="video_urls.txt"
-#BASE_DIR="crawl_test"
 DOWNLOAD_DIR="videos"
 IMAGE_OUTPUT_DIR="downloaded_images/gg_images"
 FRAME_OUTPUT_DIR="downloaded_images/from_youtube"
@@ -21,18 +19,20 @@ mkdir -p "$DOWNLOAD_DIR"
 mkdir -p "$IMAGE_OUTPUT_DIR"
 mkdir -p "$FRAME_OUTPUT_DIR"
 
+# === STEP 1: Download Images ===
 echo "📷 Step 1: Downloading Google Images for: '$IMG_KEYWORDS'"
 python3 download_images.py "$IMG_KEYWORDS"
 
+# === STEP 2: Search YouTube and Download Videos ===
 echo "🎬 Step 2: Searching YouTube for: '$VID_KEYWORDS'..."
-yt-dlp --get-id "ytsearch5:$VID_KEYWORDS" | sed 's/^/https:\/\/www.youtube.com\/watch?v=/' > "$RESULT_FILE"
-#yt-dlp --match-filter "is_live = false" --get-id "ytsearch5:$VID_KEYWORDS" | sed 's/^/https:\/\/www.youtube.com\/watch?v=/' > "$RESULT_FILE"
+mapfile -t URLS < <(yt-dlp --get-id "ytsearch5:$VID_KEYWORDS" | sed 's/^/https:\/\/www.youtube.com\/watch?v=/')  #can be ytsearch5/ytsearch10
 
 echo "📄 Found video URLs:"
-cat "$RESULT_FILE"
+for URL in "${URLS[@]}"; do
+    echo "$URL"
+done
 
-mapfile -t URLS < "$RESULT_FILE"
-
+# === Download each video with constraints ===
 COUNTER=1
 for VIDEO_URL in "${URLS[@]}"; do
     OUTPUT_NAME="source${COUNTER}.mp4"
@@ -58,6 +58,7 @@ for VIDEO_URL in "${URLS[@]}"; do
     ((COUNTER++))
 done
 
+# === STEP 3: Extract Key Frames from Videos ===
 echo "🖼️ Step 3: Extracting key frames from downloaded videos..."
 for VIDEO_FILE in "$DOWNLOAD_DIR"/*.mp4; do
     echo "🔍 Processing: $VIDEO_FILE"
@@ -67,9 +68,9 @@ done
 echo "🎉 All tasks completed!"
 
 
+
 ##How to 
 # chmod +x process.sh
 # ./process.sh "street webcam car" "traffic camera video"  - image keywords, video keywords
-# Change ytsearch5/10 for num of videos 
+
 # Beware of live videos, usually they make the process longer (more than 10 mins for both images and videos); if you accidentally download a live video -> wait 4 mins and ctrl c
-# Another option: yt-dlp --match-filter "is_live = false" --get-id "ytsearch5:$VID_KEYWORDS" | sed 's/^/https:\/\/www.youtube.com\/watch?v=/' > "$RESULT_FILE"
