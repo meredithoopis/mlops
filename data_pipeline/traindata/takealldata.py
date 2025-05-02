@@ -423,7 +423,7 @@ def download_one_image(bucket, split, image_id, download_folder):
         return False
     return True
 
-def download_all_images(image_list_file, download_folder="data", num_processes=14):
+def download_all_images(image_list_file, download_folder="data", num_processes=10):
     bucket = boto3.resource('s3', config=botocore.config.Config(signature_version=botocore.UNSIGNED)).Bucket(BUCKET_NAME)
 
     if not os.path.exists(download_folder):
@@ -572,7 +572,7 @@ if __name__ == "__main__":
     selected_images = find_balanced_vehicle_images(output_file="vehicle_images.txt", images_per_class=1000, seed=1610)
     
     # Step 2: Download the selected images
-    successful_downloads_file = download_all_images("vehicle_images.txt", download_folder="data", num_processes=14)
+    successful_downloads_file = download_all_images("vehicle_images.txt", download_folder="data", num_processes=10)
     
     # Step 3: Extract labels for the downloaded images
     class_counts = extract_vehicle_labels_for_images(successful_downloads_file, output_file="vehicle_labels.csv")
@@ -592,3 +592,5 @@ if __name__ == "__main__":
         
         pd.DataFrame([stats]).to_json("dataset_stats.json", orient="records")
         print("Final dataset statistics saved to dataset_stats.json")
+
+#Problem: The whole process takes a lot of time, especially the downloading part.

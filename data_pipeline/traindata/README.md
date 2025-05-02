@@ -1,3 +1,10 @@
-https://storage.googleapis.com/openimages/web/download.html#bounding-boxes
+# Download the training data 
+A Python script to download the training data. 
 
-run python takealldata.py to download the data and annotate the data accordingly 
+## ⚙️ How-to
+Running the script 
+```bash 
+python takealldata.py
+```
+
+
