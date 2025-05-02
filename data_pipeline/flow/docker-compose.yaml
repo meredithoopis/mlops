@@ -12,8 +12,8 @@ x-airflow-common:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor #Usse LocalExecutor for local dev
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    #AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    #AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -34,14 +34,16 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./config:/opt/airflow/config
     - ./plugins:/opt/airflow/plugins
-    - ./images:/opt/airflow/images 
-    - ./labels.csv:/opt/airflow/labels.csv
+    # - ./images:/opt/airflow/images 
+    # - ./labels.csv:/opt/airflow/labels.csv
+    - ../traindata/data:/opt/airflow/data
+    - ../traindata/vehicle_labels.csv:/opt/airflow/vehicle_labels.csv
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
-    redis:
-      condition: service_healthy
+    # redis:
+    #   condition: service_healthy
     postgres:
       condition: service_healthy
 services:
@@ -63,19 +65,19 @@ services:
     ports:
       - "5432:5432"
 
-  redis:
-    # Redis is limited to 7.2-bookworm due to licencing change
-    # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
-    image: redis:7.2-bookworm
-    expose:
-      - 6379
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 30s
-      retries: 50
-      start_period: 30s
-    restart: always
+  # redis:
+  #   # Redis is limited to 7.2-bookworm due to licencing change
+  #   # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
+  #   image: redis:7.2-bookworm
+  #   expose:
+  #     - 6379
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 30s
+  #     retries: 50
+  #     start_period: 30s
+  #   restart: always
 
   # Webserver service for Airflow
   airflow-webserver:
@@ -86,8 +88,10 @@ services:
       - ./logs:/opt/airflow/logs
       - ./config:/opt/airflow/config
       - ./plugins:/opt/airflow/plugins
-      - ./images:/opt/airflow/images
-      - ./labels.csv:/opt/airflow/labels.csv 
+      # - ./images:/opt/airflow/images
+      # - ./labels.csv:/opt/airflow/labels.csv 
+      - ../traindata/data:/opt/airflow/data
+      - ../traindata/vehicle_labels.csv:/opt/airflow/vehicle_labels.csv
     ports:
       - "8080:8080"
     healthcheck:
@@ -118,8 +122,10 @@ services:
       - ./logs:/opt/airflow/logs
       - ./config:/opt/airflow/config
       - ./plugins:/opt/airflow/plugins
-      - ./images:/opt/airflow/images
-      - ./labels.csv:/opt/airflow/labels.csv 
+      # - ./images:/opt/airflow/images
+      # - ./labels.csv:/opt/airflow/labels.csv 
+      - ../traindata/data:/opt/airflow/data
+      - ../traindata/vehicle_labels.csv:/opt/airflow/vehicle_labels.csv
     depends_on:
       postgres: 
         condition: service_healthy

@@ -14,14 +14,14 @@ import math
 logging.basicConfig(level=logging.INFO)
 
 # --- Configuration ---
-IMAGES_DIR = "/opt/airflow/images"
-LABELS_CSV = "/opt/airflow/labels.csv"
+IMAGES_DIR = "/opt/airflow/data"
+LABELS_CSV = "/opt/airflow/vehicle_labels.csv"
 DB_HOST = "172.20.219.28"
 DB_NAME = "carrrr"
 DB_USER = "airflow"
 DB_PASSWORD = "airflow"
 DB_PORT = 5432
-BATCH_SIZE = 50
+BATCH_SIZE = 100
 
 def get_db_connection():
     return psycopg2.connect(
@@ -56,6 +56,50 @@ def init_schema():
     conn.close()
     logging.info("Schema initialized.")
 
+# def process_batch_images(batch_images, **kwargs):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+
+#     for image_name in batch_images:
+#         try:
+#             image_path = os.path.join(IMAGES_DIR, image_name)
+#             img = cv2.imread(image_path)
+#             if img is None:
+#                 logging.warning(f"Image not found or unreadable: {image_path}")
+#                 continue
+
+#             img_bytes_resized = cv2.imencode('.jpg', cv2.resize(img, (224, 224)))[1].tobytes()
+#             image_id = os.path.splitext(image_name)[0]
+#             cur.execute(
+#                 "INSERT INTO images (image_id, image_data) VALUES (%s, %s) "
+#                 "ON CONFLICT (image_id) DO UPDATE SET image_data = EXCLUDED.image_data",
+#                 (image_id, psycopg2.Binary(img_bytes_resized))
+#             )
+
+#             records = LABELS_DF[LABELS_DF['ImageID'] == image_id]
+#             recs = records[['XMin', 'XMax', 'YMin', 'YMax', 'LabelName_Text']].values.tolist()
+#             logging.info(f"Found {len(recs)} labels for image {image_id}")
+
+#             for xmin, xmax, ymin, ymax, label_name in recs:
+#                 try:
+#                     cur.execute(
+#                         "INSERT INTO labels (image_id, x_min, x_max, y_min, y_max, label_name) "
+#                         "VALUES (%s, %s, %s, %s, %s, %s)",
+#                         (image_id, xmin, xmax, ymin, ymax, label_name)
+#                     )
+#                 except psycopg2.Error as e:
+#                     logging.error(f"Insert failed for label in image {image_id}: {e}")
+#                     conn.rollback()
+
+#         except Exception as e:
+#             logging.error(f"Processing failed for image {image_name}: {e}")
+
+#     conn.commit()
+#     cur.close()
+#     conn.close()
+#     logging.info("Finished processing a batch")
+
+
 def process_batch_images(batch_images, **kwargs):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -70,34 +114,37 @@ def process_batch_images(batch_images, **kwargs):
 
             img_bytes_resized = cv2.imencode('.jpg', cv2.resize(img, (224, 224)))[1].tobytes()
             image_id = os.path.splitext(image_name)[0]
+
+            # Insert or update image
             cur.execute(
                 "INSERT INTO images (image_id, image_data) VALUES (%s, %s) "
                 "ON CONFLICT (image_id) DO UPDATE SET image_data = EXCLUDED.image_data",
                 (image_id, psycopg2.Binary(img_bytes_resized))
             )
 
+            # Get all labels for this image
             records = LABELS_DF[LABELS_DF['ImageID'] == image_id]
             recs = records[['XMin', 'XMax', 'YMin', 'YMax', 'LabelName_Text']].values.tolist()
             logging.info(f"Found {len(recs)} labels for image {image_id}")
 
             for xmin, xmax, ymin, ymax, label_name in recs:
-                try:
-                    cur.execute(
-                        "INSERT INTO labels (image_id, x_min, x_max, y_min, y_max, label_name) "
-                        "VALUES (%s, %s, %s, %s, %s, %s)",
-                        (image_id, xmin, xmax, ymin, ymax, label_name)
-                    )
-                except psycopg2.Error as e:
-                    logging.error(f"Insert failed for label in image {image_id}: {e}")
-                    conn.rollback()
+                cur.execute(
+                    "INSERT INTO labels (image_id, x_min, x_max, y_min, y_max, label_name) "
+                    "VALUES (%s, %s, %s, %s, %s, %s)",
+                    (image_id, xmin, xmax, ymin, ymax, label_name)
+                )
+
+            # Commit after each image and its labels are processed
+            conn.commit()
 
         except Exception as e:
             logging.error(f"Processing failed for image {image_name}: {e}")
+            conn.rollback()
 
-    conn.commit()
     cur.close()
     conn.close()
-    logging.info("Finished processing a batch")
+    logging.info("Finished processing current batch of images.")
+
 
 with DAG(
     dag_id='car_pipeline_batch',
