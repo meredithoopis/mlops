@@ -26,6 +26,5 @@ Paste your API Key from [SerpApi](https://serpapi.com/users/sign_in)
 chmod +x process.sh
 ./process.sh "street webcam car" "traffic camera video"
 ```
-
-
+You can change the keywords accordingly: The first is the image keyword, the second is the video keyword
 

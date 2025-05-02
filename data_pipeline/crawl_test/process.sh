@@ -67,10 +67,4 @@ done
 
 echo "🎉 All tasks completed!"
 
-
-
-##How to 
-# chmod +x process.sh
-# ./process.sh "street webcam car" "traffic camera video"  - image keywords, video keywords
-
 # Beware of live videos, usually they make the process longer (more than 10 mins for both images and videos); if you accidentally download a live video -> wait 4 mins and ctrl c
