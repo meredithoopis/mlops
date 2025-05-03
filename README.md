@@ -1,3 +1,4 @@
+1. Chuẩn bị dữ liệu
 import pandas as pd
 import os
 import random
@@ -6,8 +7,8 @@ import glob
 
 data_dir = "data"
 labels_csv = "vehicle_labels.csv"
-labels_dir = "/Users/admin/Car-detection-serving-model/open_images_project/labels"
-dataset_dir = "/Users/admin/Car-detection-serving-model/open_images_project/dataset"
+labels_dir = "open_images_project/labels"
+dataset_dir = "open_images_project/dataset"
 os.makedirs(labels_dir, exist_ok=True)
 os.makedirs(f"{dataset_dir}/images/train", exist_ok=True)
 os.makedirs(f"{dataset_dir}/images/val", exist_ok=True)
@@ -22,10 +23,7 @@ class_mapping = {
 }
 
 labels = pd.read_csv(labels_csv)
-
-
 labels = labels.drop_duplicates(subset=['ImageID', 'LabelName_Text', 'XMin', 'YMin', 'XMax', 'YMax'])
-
 
 for image_id in labels['ImageID'].unique():
     image_labels = labels[labels['ImageID'] == image_id]
@@ -45,33 +43,27 @@ for image_id in labels['ImageID'].unique():
                 height = y_max - y_min
                 f.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
 
-
 images_with_labels = []
 for img in os.listdir(data_dir):
     if not img.endswith(".jpg"):
         continue
     lbl = os.path.join(labels_dir, img.replace(".jpg", ".txt"))
-    if os.path.exists(lbl) and os.path.getsize(lbl) > 0:  # Chỉ lấy ảnh có nhãn
+    if os.path.exists(lbl) and os.path.getsize(lbl) > 0:
         images_with_labels.append(img)
 
 random.seed(1610)
-
-
 train_imgs = random.sample(images_with_labels, int(0.9 * len(images_with_labels)))
 val_imgs = [img for img in images_with_labels if img not in train_imgs]
-
 
 for img in train_imgs:
     shutil.copy(os.path.join(data_dir, img), f"{dataset_dir}/images/train/{img}")
     lbl = img.replace(".jpg", ".txt")
     shutil.copy(os.path.join(labels_dir, lbl), f"{dataset_dir}/labels/train/{lbl}")
 
-
 for img in val_imgs:
     shutil.copy(os.path.join(data_dir, img), f"{dataset_dir}/images/val/{img}")
     lbl = img.replace(".jpg", ".txt")
     shutil.copy(os.path.join(labels_dir, lbl), f"{dataset_dir}/labels/val/{lbl}")
-
 
 class_counts = {i: 0 for i in range(len(class_mapping))}
 invalid_files = []
@@ -85,26 +77,11 @@ for label_file in glob.glob(f"{dataset_dir}/labels/*/*.txt"):
                 else:
                     invalid_files.append((label_file, class_id))
 
-class_names = list(class_mapping.keys())
-print("Phân bố lớp trong dataset lớn sau khi làm sạch:")
-print("Train:")
-for i in range(len(class_names)):
-    print(f"{class_names[i]}: {class_counts[i]} instances")
-print(f"Số ảnh train: {len(train_imgs)}")
-print(f"Số ảnh val: {len(val_imgs)}")
-
-if invalid_files:
-    print("\nCác file chứa class_id không hợp lệ:")
-    for file, class_id in invalid_files:
-        print(f"File: {file}, class_id: {class_id}")
-else:
-    print("\nKhông tìm thấy class_id không hợp lệ.")
-
-
-## Tạo data.yaml
+                    
+2. Tạo file data.yaml
 import os
 
-dataset_dir = "/Users/admin/Car-detection-serving-model/open_images_project/dataset"
+dataset_dir = "open_images_project/dataset"
 data_yaml_content = f"""train: {dataset_dir}/images/train
 val: {dataset_dir}/images/val
 nc: 4
@@ -124,20 +101,98 @@ mixup: 0.0     # Mixup
 """
 with open(f"{dataset_dir}/data.yaml", "w") as f:
     f.write(data_yaml_content)
-print("Đã tạo data.yaml với 4 lớp và augmentation")
 
 
-# Train
+
+Mô hình được huấn luyện qua 4 giai đoạn (tổng cộng 60 epochs):
+1. 30 epochs (`train_large_new`).
+2. 10 epochs (`train_large_new_extended`).
+3. 10 epochs (`train_large_new_extended_2`).
+4. 10 epochs (`train_large_new_final`).
+
+Đoạn code dưới đây là phiên bản gộp tương đương (60 epochs), nhưng thực tế mình đã chạy tách rời:
+3. Huấn luyện mô hình
 from ultralytics import YOLO
 model = YOLO("yolo11n.pt")
 results = model.train(
-    data="/Users/admin/Car-detection-serving-model/open_images_project/dataset/data.yaml",
+    data="open_images_project/dataset/data.yaml",
     epochs=60,
-    imgsz=640,  
+    imgsz=640,
     batch=16,
     device="cpu",
     optimizer="AdamW",
-    lr0=0.0005, 
+    lr0=0.0005,
     name="train_large_new_final"
 )
+4. Log metrics, tham số và artifacts vào MLflow
+import mlflow
+import pandas as pd
 
+mlflow.set_tracking_uri("sqlite:///mlruns.db")
+mlflow.set_experiment("YOLOv11_Experiments")
+
+results_df = pd.read_csv("runs/detect/train_large_new_final/results.csv")
+
+with mlflow.start_run(run_name="YOLOv11_Training_Final"):
+    # Log metrics
+    metrics = {
+        "mAP50": results_df["metrics/mAP50(B)"].iloc[-1],
+        "mAP50-95": results_df["metrics/mAP50-95(B)"].iloc[-1],
+        "train_box_loss": results_df["train/box_loss"].iloc[-1],
+        "val_box_loss": results_df["val/box_loss"].iloc[-1]
+    }
+    mlflow.log_metrics(metrics)
+
+    # Log tham số
+    params = {
+        "epochs": 60,
+        "imgsz": 640,
+        "batch": 16,
+        "optimizer": "AdamW",
+        "lr0": 0.0005
+    }
+    mlflow.log_params(params)
+
+    # Log artifacts
+    mlflow.log_artifact("open_images_project/dataset/data.yaml")
+    mlflow.log_artifact("runs/detect/train_large_new_final/weights/best.pt")
+    mlflow.log_artifact("runs/detect/train_large_new_final/results.png", "training_plots")
+
+5.Đăng ký mô hình vào MLflow Model Registry
+import mlflow
+from mlflow.tracking import MlflowClient
+
+mlflow.set_tracking_uri("sqlite:///mlruns.db")
+mlflow.set_experiment("YOLOv11_Experiments")
+
+with mlflow.start_run(run_name="YOLOv11_Training_Final"):
+    model_path = "runs/detect/train_large_new_final/weights/best.pt"
+    mlflow.log_artifact(model_path)
+
+    model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+    result = mlflow.register_model(model_uri, "YOLOv11_Model")
+
+    client = MlflowClient()
+    tags = {
+        "model_type": "YOLOv11",
+        "task": "vehicle_detection",
+        "imgsz": "640",
+        "epochs": "60",
+        "optimizer": "AdamW"
+    }
+    for key, value in tags.items():
+        client.set_model_version_tag("YOLOv11_Model", result.version, key, value)
+
+    client.set_registered_model_tag("YOLOv11_Model", "description", "YOLOv11 model for vehicle detection")
+
+    mAP50 = results_df["metrics/mAP50(B)"].iloc[-1]
+    if mAP50 >= 0.7:
+        client.transition_model_version_stage(
+            name="YOLOv11_Model",
+            version=result.version,
+            stage="Production"
+        )
+        print(f"Model version {result.version} transitioned to Production stage")
+ 
+
+                    
