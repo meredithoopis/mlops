@@ -1,4 +1,4 @@
-import streamlit as st
+eimport streamlit as st
 import os
 from PIL import Image
 import cv2
@@ -76,7 +76,7 @@ if resources_ready:
                 st.success("YOLO detection completed successfully!", icon=":material/check:")
 
 else:
-    st.error("❌ Failed to download required resources. Please check the internet connection and try again.")
+    st.error("❌ Failed to download required resources. Please try again.")
 
 
 #streamlit run serving_pipeline/ui.py
