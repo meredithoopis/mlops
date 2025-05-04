@@ -85,7 +85,7 @@ def main():
         if downloaded >= limit:
             break
         filename = f"image_{downloaded + 1}.png"
-        save_path = os.path.join(SAVE_DIR, filename)
+        save_path = os.path.join(SAVE_DIR, filename)        
         if download_image(url, save_path):
             downloaded += 1
         time.sleep(0.2)  

@@ -3,12 +3,18 @@ set -euo pipefail
 
 mkdir -p ./dags ./logs ./plugins ./config
 
-if [ ! -f ./dags/car_dag.py ]; then
-    cp car_dag.py ./dags/
-    echo "Copied car_dag.py to ./dags/"
-else
-    echo "car_dag.py already exists in ./dags/, skipping copy."
-fi
+FILES=("car_dag.py" "crawl_dag.py")
+
+for FILE in "${FILES[@]}"; do
+    if [ ! -f "./dags/$FILE" ]; then
+        cp "$FILE" ./dags/
+        echo "Copied $FILE to ./dags/"
+    else
+        echo "$FILE already exists in ./dags/, skipping copy."
+    fi
+done
+
+
 
 if [ ! -f .env ]; then
     echo "AIRFLOW_UID=$(id -u)" > .env
