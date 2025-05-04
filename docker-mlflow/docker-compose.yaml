@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  yolo_app:
+    build: .
+    container_name: yolo_pipeline
+    volumes:
+      - .:/app
+    depends_on:
+      - mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    command: python tracking_pipeline.py
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    environment:
+      - MLFLOW_TRACKING_URI=http://0.0.0.0:5000
+    command: >
+      mlflow server
+      --backend-store-uri /mlflow/mlruns
+      --host 0.0.0.0
+      --port 5000
