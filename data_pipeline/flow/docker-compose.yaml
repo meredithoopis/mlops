@@ -92,6 +92,7 @@ services:
       # - ./labels.csv:/opt/airflow/labels.csv 
       - ../traindata/data:/opt/airflow/data
       - ../traindata/vehicle_labels.csv:/opt/airflow/vehicle_labels.csv
+      - ./.env:/app/.env
     ports:
       - "8080:8080"
     healthcheck:
@@ -105,6 +106,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
        condition: service_completed_successfully
+    env_file:
+      - ./.env
 
   # Scheduler service for Airflow
   airflow-scheduler:
@@ -126,14 +129,16 @@ services:
       # - ./labels.csv:/opt/airflow/labels.csv 
       - ../traindata/data:/opt/airflow/data
       - ../traindata/vehicle_labels.csv:/opt/airflow/vehicle_labels.csv
+      - ./.env:app/.env
     depends_on:
       postgres: 
         condition: service_healthy
       #<<: *airflow-common-depends-on
       #airflow-init:
        # condition: service_completed_successfully
-
-
+    env_file:
+      - ./.env
+      
   airflow-init:
     <<: *airflow-common
     entrypoint: /bin/bash
