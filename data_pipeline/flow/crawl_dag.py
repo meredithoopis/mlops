@@ -25,9 +25,10 @@ DB_PASSWORD = "airflow"
 DB_PORT = 5432
 
 # Load .env
-API_KEY = "fef2ffbf8d56b87b1920a9fc91809ab0bbc936101777e9863df3d54451f749ee"
-dotenv_path = Path('data_pipeline/crawl_test/.env')
+#API_KEY = "fef2ffbf8d56b87b1920a9fc91809ab0bbc936101777e9863df3d54451f749ee"
+dotenv_path = Path('./.env')
 load_dotenv(dotenv_path)
+API_KEY = os.getenv("API_KEY")
 
 def get_db_connection():
     return psycopg2.connect(
