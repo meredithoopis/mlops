@@ -25,4 +25,9 @@ data_pipeline/flow/dags/
 data_pipeline/flow/logs/
 data_pipeline/flow/plugins/ 
 # flow/exportnames.py 
-
+tracking_pipeline/labels 
+tracking_pipeline/dataset
+tracking_pipeline/runs
+tracking_pipeline/yolo11n.pt 
+tracking_pipeline/mlruns/
+tracking_pipeline/mlruns.db 
