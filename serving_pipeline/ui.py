@@ -1,8 +1,11 @@
-eimport streamlit as st
+import streamlit as st
 import os
 from PIL import Image
 import cv2
 from ultralytics import YOLO
+from database.db import save_full_feedback
+import psycopg2
+
 
 # Đặt cấu hình trang Streamlit
 st.set_page_config(page_title="Multi-label Object Detection", layout="centered")
@@ -70,6 +73,32 @@ if resources_ready:
 
                         if detect_all or label_lower in selected_objects_lower:
                             filtered_boxes.append(((x1, y1), (x2, y2), label, conf))
+                            
+                             # 💾 Save each detection into database
+                            save_full_feedback(
+                                image_id=os.path.splitext(uploaded_file.name)[0],  # vd: name without .jpg
+                                source="user_upload",
+                                label_name=label,
+                                confidence=conf,
+                                x_min=x1 / w,
+                                x_max=x2 / w,
+                                y_min=y1 / h,
+                                y_max=y2 / h,
+                                is_occluded=False,
+                                is_truncated=False,
+                                is_group_of=False,
+                                is_depiction=False,
+                                is_inside=False,      
+                                xclick1x=x1 / w,      
+                                xclick2x=x2 / w,
+                                xclick3x=x1 / w,
+                                xclick4x=x2 / w,
+                                xclick1y=y1 / h,
+                                xclick2y=y1 / h,
+                                xclick3y=y2 / h,
+                                xclick4y=y2 / h,
+                                labelname_text=label
+                            )
 
                 image_with_boxes = draw_boxes_on_image(image_np.copy(), filtered_boxes)
                 st.image(image_with_boxes, caption="YOLO Bounding Boxes", use_container_width=True)
@@ -79,5 +108,8 @@ else:
     st.error("❌ Failed to download required resources. Please try again.")
 
 
-#streamlit run serving_pipeline/ui.py
+#streamlit run serving_pipeline/ui.py -> error: pip install streamlit
 #streamlit run ui.py
+
+# run init_db.py first to create the big table before running ui.py! -> python serving_pipeline/database/init_db.py
+# error: pip install psycop2

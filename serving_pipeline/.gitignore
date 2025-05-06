@@ -29,3 +29,17 @@ var/
 
 # Streamlit
 .streamlit/secrets.toml
+
+*.dylib
+ml-project/lib/python3.11/site-packages/
+
+# Ignore Python virtual environment
+ml-project/
+venv/
+env/
+.env/
+
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*$py.class
