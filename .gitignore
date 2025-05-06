@@ -21,10 +21,11 @@ data_pipeline/traindata/train-annotations-bbox.csv
 data_pipeline/traindata/vehicle_images.txt 
 data_pipeline/traindata/class-descriptions-boxable.csv
 data_pipeline/flow/config/ 
+data_pipeline/flow/.env
+data_pipeline/flow/mlruns
 data_pipeline/flow/dags/
 data_pipeline/flow/logs/
-data_pipeline/flow/plugins/ 
-# flow/exportnames.py 
+data_pipeline/flow/plugins/  
 tracking_pipeline/labels 
 tracking_pipeline/dataset
 tracking_pipeline/runs

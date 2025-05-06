@@ -25,8 +25,7 @@ DB_PASSWORD = "airflow"
 DB_PORT = 5432
 
 # Load .env
-#API_KEY = "fef2ffbf8d56b87b1920a9fc91809ab0bbc936101777e9863df3d54451f749ee"
-dotenv_path = Path('./.env')
+dotenv_path = Path('.env')
 load_dotenv(dotenv_path)
 API_KEY = os.getenv("API_KEY")
 
@@ -55,9 +54,6 @@ def init_schema():
 
 # Function to download images from Google using SerpAPI
 def download_images_from_google(query, output_dir):
-    #API_KEY = os.getenv('API_KEY')
-
-    # Ensure the output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
