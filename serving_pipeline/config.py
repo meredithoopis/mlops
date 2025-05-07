@@ -1,5 +1,7 @@
-# CSV_PATH = "data_pipeline/traindata/car_labels.csv"      
-# IMAGE_FOLDER = "data_pipeline/traindata/data"           
+import os
 
-CSV_PATH = "serving_pipeline/car_labels.csv"
-IMAGE_FOLDER = "data"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # serving_pipeline/
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..")) 
+
+CSV_PATH = os.path.join(BASE_DIR, "car_labels.csv")
+IMAGE_FOLDER = os.path.join(PROJECT_ROOT, "data_pipeline", "traindata", "data")

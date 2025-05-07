@@ -2,12 +2,16 @@ import streamlit as st
 import os
 from PIL import Image
 import cv2
-from ultralytics import YOLO
-from database.db import save_full_feedback
+from ultralytics import YOLO  
+from db import save_full_feedback, create_table 
 import psycopg2
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="streamlit")
 
-
-# Đặt cấu hình trang Streamlit
+try:
+    create_table()
+except Exception as e:
+    st.error(f"❌ Failed to ensure feedback table exists: {e}")
 st.set_page_config(page_title="Multi-label Object Detection", layout="centered")
 
 from utils import get_image_array, get_boxes_for_image, draw_boxes_on_image
@@ -16,29 +20,29 @@ from downloader import download_resources
 st.title("🛸 Multi-label Object Detection")
 st.info('🚍 Welcome to the app!')
 
-# Tải tài nguyên cần thiết (model, v.v.)
-resources_ready = download_resources()
+resources_ready = True 
 
 if resources_ready:
-    # Load model YOLO
-    model = YOLO('yolo11n.pt')
+    model_path = os.path.join("..", "tracking_pipeline", "yolo11n.pt") 
+    if not os.path.exists(model_path):
+        st.error(f"❌ Model file not found at: {model_path}")
+    else:
+        model = YOLO(model_path)
 
     available_objects = ["car", "truck", "bus", "taxi", "vehicle registration plate"]
 
-    # Upload ảnh
+    # Upload images 
     uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-    # Chọn các object muốn detect
+    # Chọn objects to detect
     selected_objects = st.multiselect(
         "Select objects to detect",
         options=available_objects,
         default=[]
     )
 
-    # Nếu không chọn gì, detect tất cả object mà YOLO biết
+    # Default is detect all  
     detect_all = len(selected_objects) == 0
-
-    # Chuyển các object đã chọn thành dạng lowercase để dễ so sánh
     selected_objects_lower = [obj.lower() for obj in selected_objects]
 
     # Confidence threshold
@@ -54,12 +58,10 @@ if resources_ready:
             boxes = get_boxes_for_image(image_id, w, h)
 
             if boxes:
-                # Nếu ảnh có trong file CSV (bounding box có sẵn)
                 image_with_boxes = draw_boxes_on_image(image_np.copy(), boxes)
                 st.image(image_with_boxes, caption="CSV Bounding Boxes", use_container_width=True)
                 st.success("CSV-based detection completed successfully!", icon=":material/check:")
             else:
-                # Dùng YOLO để detect
                 results = model(image_np)[0]
                 filtered_boxes = []
 
@@ -75,30 +77,34 @@ if resources_ready:
                             filtered_boxes.append(((x1, y1), (x2, y2), label, conf))
                             
                              # 💾 Save each detection into database
-                            save_full_feedback(
-                                image_id=os.path.splitext(uploaded_file.name)[0],  # vd: name without .jpg
-                                source="user_upload",
-                                label_name=label,
-                                confidence=conf,
-                                x_min=x1 / w,
-                                x_max=x2 / w,
-                                y_min=y1 / h,
-                                y_max=y2 / h,
-                                is_occluded=False,
-                                is_truncated=False,
-                                is_group_of=False,
-                                is_depiction=False,
-                                is_inside=False,      
-                                xclick1x=x1 / w,      
-                                xclick2x=x2 / w,
-                                xclick3x=x1 / w,
-                                xclick4x=x2 / w,
-                                xclick1y=y1 / h,
-                                xclick2y=y1 / h,
-                                xclick3y=y2 / h,
-                                xclick4y=y2 / h,
-                                labelname_text=label
-                            )
+                            try:
+                                save_full_feedback(
+                                    image_id=os.path.splitext(uploaded_file.name)[0],
+                                    source="user_upload",
+                                    label_name=label,
+                                    confidence=conf,
+                                    x_min=x1 / w,
+                                    x_max=x2 / w,
+                                    y_min=y1 / h,
+                                    y_max=y2 / h,
+                                    is_occluded=False,
+                                    is_truncated=False,
+                                    is_group_of=False,
+                                    is_depiction=False,
+                                    is_inside=False,
+                                    xclick1x=x1 / w,
+                                    xclick2x=x2 / w,
+                                    xclick3x=x1 / w,
+                                    xclick4x=x2 / w,
+                                    xclick1y=y1 / h,
+                                    xclick2y=y1 / h,
+                                    xclick3y=y2 / h,
+                                    xclick4y=y2 / h,
+                                    labelname_text=label
+                                )
+                            except Exception as e:
+                                 st.error(f"❌ Failed to save feedback: {e}")
+
 
                 image_with_boxes = draw_boxes_on_image(image_np.copy(), filtered_boxes)
                 st.image(image_with_boxes, caption="YOLO Bounding Boxes", use_container_width=True)
@@ -108,8 +114,3 @@ else:
     st.error("❌ Failed to download required resources. Please try again.")
 
 
-#streamlit run serving_pipeline/ui.py -> error: pip install streamlit
-#streamlit run ui.py
-
-# run init_db.py first to create the big table before running ui.py! -> python serving_pipeline/database/init_db.py
-# error: pip install psycop2

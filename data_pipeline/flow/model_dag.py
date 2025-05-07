@@ -139,6 +139,27 @@ mixup: 0.0
     with open(yaml_path, 'w') as f:
         f.write(data_yaml)
     kwargs['ti'].xcom_push(key='data_yaml', value=yaml_path)
+    
+    
+# Train on the full dataset (not a subset)
+def train_yolo_full(**kwargs):
+    if not os.path.exists("yolo11n.pt"):
+        os.system("curl -L -o yolo11n.pt https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt")
+
+    dataset_dir = kwargs['ti'].xcom_pull(key='dataset_dir', task_ids='init_config')
+    data_yaml = kwargs['ti'].xcom_pull(key='data_yaml', task_ids='init_config')
+
+    model = YOLO("yolo11n.pt")
+    model.train(
+        data=data_yaml,
+        epochs=1,
+        imgsz=640,
+        batch=16,
+        device="cpu",
+        optimizer="AdamW",
+        lr0=0.0005,
+        name="train_hyt"
+    )
 
 # For now, test with a subset first 
 def train_yolo_subset(**kwargs):
@@ -243,7 +264,8 @@ fetch_task = PythonOperator(task_id="fetch_from_db", python_callable=fetch_from_
 prepare_task = PythonOperator(task_id="prepare_labels", python_callable=prepare_labels, dag=dag)
 split_task = PythonOperator(task_id="split_dataset", python_callable=split_dataset, dag=dag)
 yaml_task = PythonOperator(task_id="create_data_yaml", python_callable=create_data_yaml, provide_context=True, dag=dag)
-train_task = PythonOperator(task_id="train_yolo_subset", python_callable=train_yolo_subset, provide_context=True, dag=dag)
+#train_task = PythonOperator(task_id="train_yolo_subset", python_callable=train_yolo_subset, provide_context=True, dag=dag)
+train_task = PythonOperator(task_id="train_yolo_full", python_callable=train_yolo_full, provide_context=True, dag=dag)
 mlflow_task = PythonOperator(task_id="log_to_mlflow", python_callable=log_to_mlflow, provide_context=True, dag=dag)
 
 init_task >> fetch_task >> prepare_task >> split_task >> yaml_task >> train_task >> mlflow_task
