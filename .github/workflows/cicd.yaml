@@ -56,6 +56,8 @@ jobs:
     needs: build-and-push-image
 
     steps:
+      - name: Set write permissions
+        run: chmod -R u+w /home/meth/code/actions-runner/_work/mlops/mlops
       - name: Checkout Repository
         uses: actions/checkout@v4
 

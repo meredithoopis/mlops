@@ -10,8 +10,8 @@ env:
 
 jobs:
   build:
-    name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    name: Build and Push Docker Image
 
     steps:
       - name: Checkout code
@@ -43,5 +43,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
