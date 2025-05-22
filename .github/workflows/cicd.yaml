@@ -5,6 +5,7 @@ on:
     branches:
       - main #chọn nhanh bị trigger 
 
+#Change something
 env:
   # THAY THẾ BẰNG TÊN IMAGE VÀ DOCKER COMPOSE FILE CỦA BẠN
   IMAGE_NAME: elliana2811/car_detection #thay tên image trên docker hub 
