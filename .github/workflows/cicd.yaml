@@ -58,6 +58,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with: 
+          clean: false 
 
       - name: Create or Update .env file with IMAGE_TAG
         if: ${{ always() }}
