@@ -54,88 +54,56 @@ jobs:
 
   deploy-airflow:
     name: Deploy Airflow Services
-    runs-on: self-hosted 
-    needs: build-and-push-image 
-    
+    runs-on: self-hosted
+    needs: build-and-push-image
+
     steps:
-      - name: Checkout Repository (để có docker-compose.yaml)
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Create or Update .env file with IMAGE_TAG
-        # Step này sẽ tạo file .env từ secret (nếu có) VÀ thêm/cập nhật IMAGE_TAG từ build output.
-        if: ${{ always() }} # Luôn chạy step này để xử lý cả trường hợp secret có hoặc không
+        if: ${{ always() }}
         env:
-          # Nội dung từ secret (có thể rỗng nếu secret không được đặt)
           ENV_CONTENT_FROM_SECRET: ${{ secrets.ENV_FILE_CONTENT }}
-          # Tag SHA từ output của job 'build-and-push-image'
           BUILT_IMAGE_TAG: ${{ needs.build-and-push-image.outputs.image_tag_sha }}
         run: |
-          $envFilePath = "./data_pipeline/flow/.env"
-          $imageTagName = "IMAGE_TAG"
-          $imageTagValue = $env:BUILT_IMAGE_TAG 
+          env_file="./data_pipeline/flow/.env"
+          image_tag="${BUILT_IMAGE_TAG:-latest}"
 
-          if (-not $imageTagValue) {
-            Write-Warning "WARNING: BUILT_IMAGE_TAG is empty. IMAGE_TAG will not be set dynamically in .env file."
-            # Trong trường hợp này, nếu .env từ secret có IMAGE_TAG thì nó sẽ được giữ nguyên,
-            # hoặc nếu không có thì IMAGE_TAG sẽ không được thêm vào.
-            # Nếu bạn muốn mặc định là 'latest' trong trường hợp này, bạn có thể đặt:
-            # $imageTagValue = "latest" 
-          }
+          # Start from secret content
+          echo "$ENV_CONTENT_FROM_SECRET" > "$env_file"
 
-          # Lấy nội dung từ secret làm cơ sở
-          $baseContent = $env:ENV_CONTENT_FROM_SECRET
-          
-          # Chuyển đổi nội dung cơ sở thành một mảng các dòng để dễ xử lý
-          # Tách dòng bằng `n (newline), cũng có thể cần xử lý `r`n (CRLF)
-          $lines = $baseContent -split "`r?`n"
+          # Remove any existing IMAGE_TAG line
+          sed -i '/^IMAGE_TAG=/d' "$env_file"
 
-          # Lọc bỏ dòng IMAGE_TAG hiện có (nếu có) từ nội dung secret
-          $newLines = $lines | Where-Object { $_ -notmatch "^${imageTagName}=" }
+          # Add new IMAGE_TAG if available
+          if [ -n "$image_tag" ]; then
+            echo "IMAGE_TAG=${image_tag}" >> "$env_file"
+            echo ".env file created/updated at $env_file with IMAGE_TAG=$image_tag"
+          else
+            echo "WARNING: BUILT_IMAGE_TAG is empty. Using 'latest'."
+          fi
 
-          # Thêm dòng IMAGE_TAG mới với giá trị từ build (nếu $imageTagValue có giá trị)
-          if ($imageTagValue) {
-            $newLines += "${imageTagName}=${imageTagValue}"
-          }
-          
-          # Tạo thư mục đích nếu chưa tồn tại
-          $targetDir = Split-Path -Path $envFilePath
-          if (-not (Test-Path $targetDir)) {
-            New-Item -ItemType Directory -Force -Path $targetDir
-            Write-Host "Created directory: $targetDir"
-          }
-
-          # Ghi lại toàn bộ nội dung đã cập nhật vào file .env
-          # Sử dụng Set-Content để ghi đè toàn bộ file với mảng các dòng mới
-          ($newLines -join "`n" + "`n") | Out-File -FilePath $envFilePath -Encoding utf8 -NoNewline
-          Write-Host ".env file has been created/updated at $envFilePath. IMAGE_TAG set to '$imageTagValue' (if provided)."
-        shell: powershell
-
-      # Bước này để xác minh rằng file .env đã được tạo thành công
       - name: Verify .env file existence
         run: |
-          $envFilePath = "./data_pipeline/flow/.env" # << ĐIỀU CHỈNH ĐƯỜNG DẪN
-          if (-not (Test-Path $envFilePath -PathType Leaf)) { 
-            Write-Error "ERROR: .env file was NOT found at '$($envFilePath)' (current directory: $(Get-Location))."
-            Write-Host "Please check if the 'ENV_FILE_CONTENT' secret is correctly set and the previous step ran successfully."
+          if [ ! -f "./data_pipeline/flow/.env" ]; then
+            echo "ERROR: .env file not found at ./data_pipeline/flow/.env"
             exit 1
-          } else {
-            Write-Host ".env file verified successfully at '$($envFilePath)'."
-          }
-        shell: powershell
+          else
+            echo ".env file verified successfully."
+          fi
 
       - name: Log in to Docker Hub (on self-hosted runner)
-        uses: docker/login-action@v3 # Hoặc v3
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Pull specific SHA tagged image
         run: docker pull ${{ env.IMAGE_NAME }}:${{ needs.build-and-push-image.outputs.image_tag_sha }}
-        shell: powershell
 
       - name: Restart Airflow services using Docker Compose
         run: |
-          Write-Host "Restarting Airflow services with the new image..."
+          echo "Restarting Airflow services with new image..."
           docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} up -d --remove-orphans airflow-webserver airflow-scheduler airflow-init
-          Write-Host "Airflow services deployment attempted."
-        shell: powershell
+          echo "Airflow services deployment attempted."
