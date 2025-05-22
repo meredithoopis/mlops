@@ -32,9 +32,8 @@ tracking_pipeline/runs
 tracking_pipeline/yolo11n.pt 
 tracking_pipeline/mlruns/
 tracking_pipeline/mlruns.db 
-serving_pipeline/.github
-
 cat > .gitignore << EOF
+
 # Virtual Environment
 ml-project/
 venv/
