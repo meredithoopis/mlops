@@ -1,12 +1,23 @@
 import psycopg2
+from dotenv import load_dotenv
+import os 
+
+dotenv_path = os.path.abspath(os.path.join("..", "data_pipeline", "flow", ".env"))
+load_dotenv(dotenv_path=dotenv_path)
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT = int(os.getenv("DB_PORT", 5432)) 
+
 
 def create_connection():
     conn = psycopg2.connect(
-        host="172.20.219.28", 
-        database="carrrr", 
-        user="airflow", 
-        password="airflow", 
-        port=5432
+        host=DB_HOST, 
+        database=DB_NAME, 
+        user=DB_USER, 
+        password=DB_PASSWORD, 
+        port=DB_PORT
     )
     return conn
 

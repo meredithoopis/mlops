@@ -12,42 +12,42 @@ import mlflow
 from mlflow.tracking import MlflowClient
 import psycopg2
 import logging
+from dotenv import load_dotenv
+load_dotenv() 
 
+#Load environment variables
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
 
 default_args = {
     'owner': 'airflow',
     'retries': 0,
     'retry_delay': timedelta(minutes=5),
+    
 }
-
 dag = DAG(
     dag_id='yolo_train_pipeline',
     default_args=default_args,
     schedule_interval=None,
     start_date=datetime(2025, 5, 6),
     catchup=False,
-    description="YOLOv11 with MLflow and full XCom config",
+    description="YOLOv11 training pipeline",
 )
 
-
+#Ensure specific directories exist 
 BASE_DIR = "/opt/airflow"
 DATA_DIR = f"{BASE_DIR}/data"
 LABELS_DIR = f"{BASE_DIR}/labels"
 DATASET_DIR = f"{BASE_DIR}/dataset"
 LABELS_CSV = f"{BASE_DIR}/vehicle_labels.csv"
 MLRUNS_DIR = f"{BASE_DIR}/mlruns"
-
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(LABELS_DIR, exist_ok=True)
 os.makedirs(DATASET_DIR, exist_ok=True)
 os.makedirs(MLRUNS_DIR, exist_ok=True)
-
-
-DB_HOST = "172.20.219.28"
-DB_NAME = "carrrr"
-DB_USER = "airflow"
-DB_PASSWORD = "airflow"
-DB_PORT = 5432
 
 class_mapping = {'Car': 0, 'Taxi': 1, 'Truck': 2, 'Bus': 3}
 
@@ -141,7 +141,6 @@ mixup: 0.0
     kwargs['ti'].xcom_push(key='data_yaml', value=yaml_path)
     
     
-# Train on the full dataset (not a subset)
 def train_yolo_full(**kwargs):
     if not os.path.exists("yolo11n.pt"):
         os.system("curl -L -o yolo11n.pt https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt")
@@ -161,7 +160,7 @@ def train_yolo_full(**kwargs):
         name="train_hyt"
     )
 
-# For now, test with a subset first 
+#This is for testing purposes only 
 def train_yolo_subset(**kwargs):
     from pathlib import Path
     if not os.path.exists("yolo11n.pt"):
@@ -190,7 +189,6 @@ def train_yolo_subset(**kwargs):
     model = YOLO("yolo11n.pt")
     model.train(data=subset_yaml, epochs=1, imgsz=416, batch=16, device="cpu", optimizer="AdamW", lr0=0.0005, name="train_hyt")
 
-#Problem, log models ok, put artifacts are not logged 
 def log_to_mlflow(**kwargs):
     log = logging.getLogger("airflow.task")
     try:
@@ -202,8 +200,6 @@ def log_to_mlflow(**kwargs):
 
         tracking_uri = MLRUNS_DIR  
         mlflow.set_tracking_uri(tracking_uri)
-        
-        # mlflow.set_tracking_uri(uri)
         mlflow.set_experiment(experiment)
         results_path = "runs/detect/train_hyt/results.csv"
         model_path = "runs/detect/train_hyt/weights/best.pt"
@@ -220,14 +216,6 @@ def log_to_mlflow(**kwargs):
             mlflow.log_params({"epochs": 1, "imgsz": 416, "batch": 16, "optimizer": "AdamW", "lr0": 0.0005})
             mlflow.log_artifact(results_path)
             mlflow.log_artifact(model_path)
-            # mlflow.log_artifact(train_dir)
-            # plot_dir = train_dir    
-            # for plot_file in ["results.png", "confusion_matrix.png", "confusion_matrix_normalized.png", "F1_curve.png", "P_curve.png", "R_curve.png", "PR_curve.png", "labels.jpg", "labels_correlogram.jpg"]:
-            #     plot_path = os.path.join(plot_dir, plot_file)
-            #     if os.path.exists(plot_path):
-            #         mlflow.log_artifact(plot_path, artifact_path="training_plots")
-            
-            # Log key training plots to a clear folder
             plot_files = [
                 "results.png", "confusion_matrix.png", "confusion_matrix_normalized.png",
                 "F1_curve.png", "P_curve.png", "R_curve.png", "PR_curve.png",
@@ -238,7 +226,6 @@ def log_to_mlflow(**kwargs):
                 if os.path.exists(plot_path):
                     mlflow.log_artifact(plot_path, artifact_path="training_plots")
 
-            # Log val_batch predictions (example outputs) to val_examples/
             for f in os.listdir(train_dir):
                 if f.startswith("val_batch") and f.endswith(".jpg"):
                     mlflow.log_artifact(os.path.join(train_dir, f), artifact_path="val_examples")
@@ -264,7 +251,6 @@ fetch_task = PythonOperator(task_id="fetch_from_db", python_callable=fetch_from_
 prepare_task = PythonOperator(task_id="prepare_labels", python_callable=prepare_labels, dag=dag)
 split_task = PythonOperator(task_id="split_dataset", python_callable=split_dataset, dag=dag)
 yaml_task = PythonOperator(task_id="create_data_yaml", python_callable=create_data_yaml, provide_context=True, dag=dag)
-#train_task = PythonOperator(task_id="train_yolo_subset", python_callable=train_yolo_subset, provide_context=True, dag=dag)
 train_task = PythonOperator(task_id="train_yolo_full", python_callable=train_yolo_full, provide_context=True, dag=dag)
 mlflow_task = PythonOperator(task_id="log_to_mlflow", python_callable=log_to_mlflow, provide_context=True, dag=dag)
 

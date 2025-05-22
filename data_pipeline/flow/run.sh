@@ -2,7 +2,7 @@
 set -euo pipefail
 
 mkdir -p ./dags ./logs ./plugins ./config ./mlruns
-FILES=("car_dag.py" "crawl_dag.py" "model_dag.py")
+FILES=("car_dag.py" "crawl_dag.py" "model_dag.py" ".env")
 
 for FILE in "${FILES[@]}"; do
     if [ ! -f "./dags/$FILE" ]; then
@@ -12,15 +12,6 @@ for FILE in "${FILES[@]}"; do
         echo "$FILE already exists in ./dags/, skipping copy."
     fi
 done
-
-
-
-# if [ ! -f .env ]; then
-#     echo "AIRFLOW_UID=$(id -u)" > .env
-#     echo ".env file created with AIRFLOW_UID."
-# else
-#     echo ".env file already exists, skipping."
-# fi
 
 if [ ! -f .env ]; then
     echo "AIRFLOW_UID=$(id -u)" > .env
@@ -34,4 +25,5 @@ else
     fi
 fi
 
-docker compose up 
+docker compose up -d  
+#docker compose up -d --build 

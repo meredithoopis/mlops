@@ -1,12 +1,81 @@
 import streamlit as st
 import os
 from PIL import Image
+import pandas as pd 
 import cv2
 from ultralytics import YOLO  
 from db import save_full_feedback, create_table 
 import psycopg2
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="streamlit")
+
+def find_best_model(mruns_path: str) -> str:
+    """
+    Find the best model from MLFLOW 
+    """
+    best_score = -1
+    best_model_path = None
+
+    for experiment_id in os.listdir(mruns_path):
+        if not experiment_id.isdigit():
+            continue
+
+        experiment_path = os.path.join(mruns_path, experiment_id)
+        if not os.path.isdir(experiment_path):
+            continue
+
+        for run_id in os.listdir(experiment_path):
+            run_path = os.path.join(experiment_path, run_id)
+            metrics_file = os.path.join(run_path, "metrics", "mAP50")
+
+            if not os.path.isfile(metrics_file):
+                continue
+
+            try:
+                with open(metrics_file) as f:
+                    # Extract the 2nd column (mAP50 value)
+                    values = [float(line.strip().split()[1]) for line in f if line.strip()]
+                    if not values:
+                        continue
+                    latest_score = values[-1]
+            except Exception as e:
+                print(f"Failed to read mAP50 from {metrics_file}: {e}")
+                continue
+
+            artifact_model_path = os.path.join(run_path, "artifacts", "best.pt")
+            if latest_score > best_score and os.path.exists(artifact_model_path):
+                best_score = latest_score
+                best_model_path = artifact_model_path 
+    return best_model_path
+
+
+def load_best_or_default_model(): 
+    model_choice = st.radio(
+        "Choose the model source:",
+        ("Use MLflow-trained model", "Use default YOLOv11 model"),
+        index=0
+    )
+
+    # Paths
+    mlruns_dir = os.path.abspath(os.path.join("..", "data_pipeline", "flow", "mlruns"))
+    fallback_model_path = os.path.abspath(os.path.join("..", "tracking_pipeline", "yolo11n.pt"))
+
+    if model_choice == "Use MLflow-trained model":
+        best_model_path = find_best_model(mlruns_dir)
+        if best_model_path and os.path.exists(best_model_path):
+            st.success(f"✅ Loaded best model from MLflow")
+            return YOLO(fallback_model_path)
+        else:
+            st.warning("⚠️ No valid MLflow model found. Falling back to YOLOv11.")
+
+    # If user chose default, or fallback is triggered
+    if os.path.exists(fallback_model_path):
+        st.success(f"✅ Loaded fallback model")
+        return YOLO(fallback_model_path)
+    else:
+        st.error("❌ No model found at all.")
+        return None
+
 
 try:
     create_table()
@@ -20,15 +89,10 @@ from downloader import download_resources
 st.title("🛸 Multi-label Object Detection")
 st.info('🚍 Welcome to the app!')
 
-resources_ready = True 
-
+model = load_best_or_default_model()
+resources_ready = model is not None
+    
 if resources_ready:
-    model_path = os.path.join("..", "tracking_pipeline", "yolo11n.pt") 
-    if not os.path.exists(model_path):
-        st.error(f"❌ Model file not found at: {model_path}")
-    else:
-        model = YOLO(model_path)
-
     available_objects = ["car", "truck", "bus", "taxi", "vehicle registration plate"]
 
     # Upload images 

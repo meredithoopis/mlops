@@ -9,6 +9,8 @@ import pandas as pd
 import base64
 import logging
 import math
+from dotenv import load_dotenv
+load_dotenv() 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -16,11 +18,11 @@ logging.basicConfig(level=logging.INFO)
 # --- Configuration ---
 IMAGES_DIR = "/opt/airflow/data"
 LABELS_CSV = "/opt/airflow/vehicle_labels.csv"
-DB_HOST = "172.20.219.28"
-DB_NAME = "carrrr"
-DB_USER = "airflow"
-DB_PASSWORD = "airflow"
-DB_PORT = 5432
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
 BATCH_SIZE = 100
 
 def get_db_connection():

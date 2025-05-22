@@ -1,0 +1,10 @@
+streamlit
+mlflow
+requests
+pandas
+ultralytics
+pillow
+opencv-python
+psycopg2-binary
+gdown
+dotenv-python 

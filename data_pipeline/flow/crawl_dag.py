@@ -14,19 +14,16 @@ from PIL import Image, UnidentifiedImageError
 import time
 from pathlib import Path
 import logging 
+from dotenv import load_dotenv
+load_dotenv() 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-DB_HOST = "172.20.219.28"
-DB_NAME = "carrrr"
-DB_USER = "airflow"
-DB_PASSWORD = "airflow"
-DB_PORT = 5432
-
-# Load .env
-dotenv_path = Path('.env')
-load_dotenv(dotenv_path)
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
 API_KEY = os.getenv("API_KEY")
 
 def get_db_connection():
@@ -99,7 +96,6 @@ def download_images_from_google(query, output_dir):
             print(f"❌ Failed to download {url}: {e}")
         downloaded += 1 
         time.sleep(0.2)
-    #return len(images_link)
 
 
 def download_videos_from_youtube(query, output_dir):
