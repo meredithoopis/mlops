@@ -56,8 +56,6 @@ jobs:
     needs: build-and-push-image
 
     steps:
-      - name: Set write permissions
-        run: chmod -R u+w /home/meth/code/actions-runner/_work/mlops/mlops
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -98,6 +96,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Stop and remove previous Docker containers and volumes
+        run: docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} down -v
 
       - name: Pull specific SHA tagged image
         run: docker pull ${{ env.IMAGE_NAME }}:${{ needs.build-and-push-image.outputs.image_tag_sha }}
