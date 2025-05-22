@@ -2,6 +2,8 @@ FROM apache/airflow:2.7.3
 
 # Installing packages as root 
 USER root
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf 
+
 RUN apt-get update --fix-missing && \
     apt-get install -y --no-install-recommends \
     libgl1 \
