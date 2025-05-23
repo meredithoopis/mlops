@@ -12,14 +12,14 @@ The overall architecture can be seen as follows.
 - **PostgreSQL** image + label storage and feedback loggin
 
 ## 📌 Tech Stack
-Python
-YOLOv11 (via Ultralytics)
-Apache Airflow
-MLflow
-Streamlit
-PostgreSQL
-Docker + Docker Compose
-Github Actions
+- Python  
+- YOLOv11 (via Ultralytics)  
+- Apache Airflow  
+- MLflow  
+- Streamlit  
+- PostgreSQL  
+- Docker + Docker Compose  
+- GitHub Actions
 
 ## 📁 Project Structure
 ```plaintext
