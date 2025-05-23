@@ -2,7 +2,7 @@
 
 A complete end-to-end object detection pipeline for detecting cars, trucks, buses, and taxis using YOLOv11. The system integrates data ingestion, model training, experiment tracking, and a Streamlit-based visual interface.
 The overall architecture can be seen as follows. 
-![Diagram]("images/diagram.png")
+![Diagram](images/diagram.png)
 
 ## 🚀 Features
 - **Airflow**-driven training pipeline (fetch, label, split, train)
